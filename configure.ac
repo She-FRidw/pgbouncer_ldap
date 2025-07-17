@@ -84,7 +84,6 @@ ldap_support=no
 AC_ARG_WITH(ldap,
   AS_HELP_STRING([--with-ldap], [build with LDAP support]),
   [ LDAP=
-    if test "$withval" != no; then
         have_pthreads=no
         # Look for LDAP header and lib
         AC_CHECK_HEADERS(ldap.h, [have_ldap_header=t])
@@ -94,12 +93,11 @@ AC_ARG_WITH(ldap,
         if test x"${have_pthreads}" != xyes; then
            AC_MSG_ERROR([pthread library should be available for LDAP support])
         fi
-        if test x"${have_ldap_header}" != x -a x"${have_libldap}" != x -a x"${have_pthreads}" = xyes; then
-          ldap_support=yes
-          LIBS="$LIBS -lcrypto"
-          AC_DEFINE(HAVE_LDAP, 1, [LDAP support])
-        fi
-    fi
+        ldap_support=yes
+        LIBS="$LIBS -lcrypto"
+        AC_DEFINE(HAVE_LDAP, 1, [LDAP support])
+
+
   ], [])
 
 dnl Check for systemd support
