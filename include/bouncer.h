@@ -220,7 +220,7 @@ extern int cf_sbuf_len;
 /* Hope this length is long enough for ldap config line */
 #define MAX_LDAP_CONFIG 1024
 #endif
-/*
+
 enum {
     /* Pseudo-codes */
     AUTH_ANY            = -1,       /* trust без проверки user */
