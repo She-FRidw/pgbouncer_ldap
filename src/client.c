@@ -569,7 +569,7 @@ bool set_pool(PgSocket *client, const char *dbname, const char *username, const 
 	} else if (cf_auth_type == AUTH_HBA &&
 		hba_eval(parsed_hba, &client->remote_addr, !!client->sbuf.tls, client->replication,
 			 dbname, username, NULL) == AUTH_LDAP) {
-		if (client->db->auth_user) {
+		if (client->db->auth_user_credentials) {
 			slog_error(client, "LDAP can't be used together with database authentication");
 			disconnect_client(client, true, "bouncer config error");
 			return false;
@@ -581,19 +581,9 @@ bool set_pool(PgSocket *client, const char *dbname, const char *username, const 
 			disconnect_client(client, true, "bouncer resources exhaustion");
 			return false;
 		}
-	} else {
-		client->login_user_credentials = find_user(username);
-		if (!client->login_user) {
-			slog_error(client, "set_pool(): failed to allocate new LDAP user");
-			disconnect_client(client, true, "bouncer resources exhaustion");
-			return false;
-		}
-		if (!check_user_connection_count(client)) {
-			return false;
-		}
-	} else {
+	}  else {
 		client->login_user_credentials = find_global_credentials(username);
-
+		
 		if (!check_db_connection_count(client))
 			return false;
 
