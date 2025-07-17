@@ -12,6 +12,7 @@
 /pgbouncer
 /.objs
 /tags
+/test
 /test/.objs
 /test/hba_test
 /test/log

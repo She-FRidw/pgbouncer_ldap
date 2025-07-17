@@ -80,4 +80,4 @@ struct Ident *ident_load_map(const char *fn);
 void ident_free(struct Ident *ident);
 struct HBA *hba_load_rules(const char *fn, struct Ident *ident);
 void hba_free(struct HBA *hba);
-struct HBARule *hba_eval(struct HBA *hba, PgAddr *addr, bool is_tls, ReplicationType replication, const char *dbname, const char *username);
+struct HBARule *hba_eval(struct HBA *hba, PgAddr *addr, bool is_tls, ReplicationType replication, const char *dbname, const char *username, char **dst);

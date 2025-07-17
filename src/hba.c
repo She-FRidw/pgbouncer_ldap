@@ -981,7 +981,7 @@ static bool address_match(const struct HBAAddress *haddress, PgAddr *addr)
 	}
 }
 
-struct HBARule * hba_eval(struct HBA *hba, PgAddr *addr, bool is_tls, ReplicationType replication, const char *dbname, const char *username)
+struct HBARule * hba_eval(struct HBA *hba, PgAddr *addr, bool is_tls, ReplicationType replication, const char *dbname, const char *username, char **dst)
 {
 	struct List *el;
 	struct HBARule *rule;
