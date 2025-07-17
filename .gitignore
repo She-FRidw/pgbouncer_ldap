@@ -5,6 +5,7 @@
 /config.status
 /config.sub
 /configure
+/configure~
 /doc/pgbouncer_1.md
 /doc/pgbouncer_5.md
 /install-sh
@@ -34,3 +35,5 @@ venv
 .venv
 
 /uncrustify
+
+__pycache__/

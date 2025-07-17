@@ -1235,6 +1235,23 @@ static bool setup_tls(struct tls_config *conf, const char *pfx, int sslmode,
 	return true;
 }
 
+static bool tls_change_requires_reconnect(struct tls_config *new_server_connect_conf)
+{
+	if (server_connect_sslmode != cf_server_tls_sslmode) {
+		log_noise("new server_tls_sslmode detected");
+		return true;
+	} else if (server_connect_conf == NULL) {
+		log_noise("no existing server tls config detected");
+		return true;
+	} else if (tls_config_equal(new_server_connect_conf, server_connect_conf)) {
+		log_noise("no server tls config change detected");
+		return false;
+	} else {
+		log_noise("server tls config change detected");
+		return true;
+	}
+}
+
 bool sbuf_tls_setup(void)
 {
 	int err;
@@ -1255,7 +1272,7 @@ bool sbuf_tls_setup(void)
 			return false;
 		}
 	}
-	if (cf_auth_type == AUTH_CERT) {
+	if (cf_auth_type == AUTH_TYPE_CERT) {
 		if (cf_client_tls_sslmode != SSLMODE_VERIFY_FULL) {
 			log_error("auth_type=cert requires client_tls_sslmode=SSLMODE_VERIFY_FULL");
 			return false;
@@ -1317,13 +1334,10 @@ bool sbuf_tls_setup(void)
 	 * To change server TLS settings all connections are marked as dirty. This
 	 * way they are recycled and the new TLS settings will be used. Otherwise
 	 * old TLS settings, possibly less secure, could be used for old
-	 * connections indefinitly. If TLS is disabled, and it was disabled before
+	 * connections indefinitely. If TLS is disabled, and it was disabled before
 	 * as well then recycling connections is not necessary, since we know none
-	 * of the settings have changed. In all other cases we recycle the
-	 * connections to be on the safe side, even though it's possible nothing
-	 * has changed.
-	 */
-	if (server_connect_conf || new_server_connect_conf) {
+	 * of the settings have changed. */
+	if ((server_connect_conf || new_server_connect_conf) && tls_change_requires_reconnect(new_server_connect_conf)) {
 		struct List *item;
 		PgPool *pool;
 		statlist_for_each(item, &pool_list) {
@@ -1332,7 +1346,7 @@ bool sbuf_tls_setup(void)
 		}
 	}
 
-	tls_free(client_accept_base);
+	usual_tls_free(client_accept_base);
 	tls_config_free(client_accept_conf);
 	tls_config_free(server_connect_conf);
 	client_accept_base = new_client_accept_base;
@@ -1342,7 +1356,7 @@ bool sbuf_tls_setup(void)
 	server_connect_sslmode = cf_server_tls_sslmode;
 	return true;
 failed:
-	tls_free(new_client_accept_base);
+	usual_tls_free(new_client_accept_base);
 	tls_config_free(new_client_accept_conf);
 	tls_config_free(new_server_connect_conf);
 	return false;
@@ -1425,7 +1439,7 @@ bool sbuf_tls_connect(SBuf *sbuf, const char *hostname)
 	err = tls_configure(ctls, server_connect_conf);
 	if (err < 0) {
 		log_error("tls client config failed: %s", tls_error(ctls));
-		tls_free(ctls);
+		usual_tls_free(ctls);
 		return false;
 	}
 
@@ -1502,7 +1516,7 @@ static int tls_sbufio_close(struct SBuf *sbuf)
 	log_noise("tls_close");
 	if (sbuf->tls) {
 		tls_close(sbuf->tls);
-		tls_free(sbuf->tls);
+		usual_tls_free(sbuf->tls);
 		sbuf->tls = NULL;
 	}
 	if (sbuf->sock > 0) {
@@ -1514,7 +1528,7 @@ static int tls_sbufio_close(struct SBuf *sbuf)
 
 void sbuf_cleanup(void)
 {
-	tls_free(client_accept_base);
+	usual_tls_free(client_accept_base);
 	tls_config_free(client_accept_conf);
 	tls_config_free(server_connect_conf);
 	client_accept_conf = NULL;
