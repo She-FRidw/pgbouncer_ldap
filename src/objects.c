@@ -44,6 +44,7 @@ struct AATree user_tree;
  * logic.
  */
 struct AATree pam_user_tree;
+struct AATree ldap_user_tree;
 
 /*
  * The global prepared statement cache, which deduplicates prepared statements
@@ -158,6 +159,7 @@ void init_objects(void)
 {
 	aatree_init(&user_tree, global_user_node_cmp, NULL);
 	aatree_init(&pam_user_tree, credentials_node_cmp, NULL);
+	aatree_init(&ldap_user_tree, credentials_node_cmp, NULL);
 	user_cache = slab_create("user_cache", sizeof(PgGlobalUser), 0, NULL, USUAL_ALLOC);
 	credentials_cache = slab_create("credentials_cache", sizeof(PgCredentials), 0, NULL, USUAL_ALLOC);
 	db_cache = slab_create("db_cache", sizeof(PgDatabase), 0, NULL, USUAL_ALLOC);
@@ -598,6 +600,33 @@ PgCredentials *add_pam_credentials(const char *name, const char *passwd)
 	return credentials;
 }
 
+PgCredentials *add_ldap_credentials(const char *name, const char *passwd)
+{
+	PgCredentials *credentials = NULL;
+	struct AANode *node;
+
+	node = aatree_search(&ldap_user_tree, (uintptr_t)name);
+	credentials = node ? container_of(node, PgCredentials, tree_node) : NULL;
+
+	if (credentials == NULL) {
+		credentials = slab_alloc(credentials_cache);
+		if (!credentials)
+			return NULL;
+
+		safe_strcpy(credentials->name, name, sizeof(credentials->name));
+
+		credentials->global_user = find_or_add_new_global_user(name, NULL);
+		if (!credentials->global_user) {
+			slab_free(credentials_cache, credentials);
+			return NULL;
+		}
+
+		aatree_insert(&ldap_user_tree, (uintptr_t)credentials->name, &credentials->tree_node);
+	}
+	if (passwd)
+		safe_strcpy(credentials->passwd, passwd, sizeof(credentials->passwd));
+	return credentials;
+}
 /* create separate PgCredentials object for this database */
 PgCredentials *force_user_credentials(PgDatabase *db, const char *name, const char *passwd)
 {
@@ -2309,6 +2338,10 @@ bool use_client_socket(int fd, PgAddr *addr,
 			log_error("SCRAM key data received for PAM user");
 			return false;
 		}
+		if (cf_auth_type == AUTH_TYPE_LDAP) {
+			log_error("SCRAM key data received for LDAP user");
+			return false;
+		}
 		credentials = find_global_credentials(username);
 		if (!credentials && db->auth_user_credentials)
 			credentials = add_dynamic_credentials(db, username, password);
@@ -2374,6 +2407,8 @@ bool use_server_socket(int fd, PgAddr *addr,
 		credentials = db->forced_user_credentials;
 	} else if (cf_auth_type == AUTH_TYPE_PAM) {
 		credentials = add_pam_credentials(username, password);
+	} else if (cf_auth_type == AUTH_TYPE_LDAP) {
+		credentials = add_ldap_credentials(username, password);
 	} else {
 		credentials = find_global_credentials(username);
 	}
@@ -2659,6 +2694,7 @@ void objects_cleanup(void)
 	memset(&database_list, 0, sizeof database_list);
 	memset(&pool_list, 0, sizeof pool_list);
 	memset(&pam_user_tree, 0, sizeof pam_user_tree);
+	memset(&ldap_user_tree, 0, sizeof ldap_user_tree);
 	memset(&user_tree, 0, sizeof user_tree);
 	memset(&autodatabase_idle_list, 0, sizeof autodatabase_idle_list);
 

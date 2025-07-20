@@ -1,12 +1,9 @@
 dnl Process this file with autoconf to produce a configure script.
 
-AC_INIT([PgBouncer],
-        [1.24.1],
-        [https://github.com/pgbouncer/pgbouncer/issues], [],
-        [https://www.pgbouncer.org/])
+AC_INIT([PgBouncer],[1.24.1],[https://github.com/pgbouncer/pgbouncer/issues],[],[https://www.pgbouncer.org/])
 AC_CONFIG_SRCDIR(src/janitor.c)
 AC_CONFIG_HEADERS([lib/usual/config.h])
-AC_PREREQ([2.59])
+AC_PREREQ([2.71])
 
 dnl basic init
 AC_USUAL_INIT

@@ -214,7 +214,7 @@ static const struct CfLookup auth_type_map[] = {
 	{ "pam", AUTH_TYPE_PAM },
 #endif
 #ifdef HAVE_LDAP
-	{ "ldap", AUTH_LDAP },
+	{ "ldap", AUTH_TYPE_LDAP },
 #endif
 	{ "scram-sha-256", AUTH_TYPE_SCRAM_SHA_256 },
 	{ NULL }
@@ -435,6 +435,8 @@ static bool requires_auth_file(int auth_type)
 {
 	/* For PAM authentication auth file is not used */
 	if (auth_type == AUTH_TYPE_PAM)
+		return false;
+	if (auth_type == AUTH_TYPE_LDAP)
 		return false;
 	return auth_type >= AUTH_TYPE_TRUST;
 }

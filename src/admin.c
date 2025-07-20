@@ -355,7 +355,7 @@ static bool show_one_fd(PgSocket *admin, PgSocket *sk)
 		password = sk->login_user_credentials->passwd;
 
 	/* PAM requires passwords as well since they are not stored externally */
-	if (cf_auth_type == AUTH_TYPE_PAM && !find_global_user(sk->login_user_credentials->name))
+	if ((cf_auth_type == AUTH_TYPE_PAM || cf_auth_type == AUTH_TYPE_LDAP) && !find_global_user(sk->login_user_credentials->name))
 		password = sk->login_user_credentials->passwd;
 
 	if (sk->pool && sk->pool->user_credentials && sk->pool->user_credentials->has_scram_keys)

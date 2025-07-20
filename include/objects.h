@@ -77,6 +77,7 @@ PgGlobalUser * find_or_add_new_global_user(const char *name, const char *passwd)
 PgCredentials * find_or_add_new_global_credentials(const char *name, const char *passwd) _MUSTCHECK;
 
 PgCredentials * add_pam_credentials(const char *name, const char *passwd) _MUSTCHECK;
+PgCredentials * add_ldap_credentials(const char *name, const char *passwd) _MUSTCHECK;
 
 void accept_cancel_request(PgSocket *req);
 bool forward_cancel_request(PgSocket *server);

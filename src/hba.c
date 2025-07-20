@@ -872,7 +872,7 @@ struct HBA *hba_load_rules(const char *fn, struct Ident *ident)
 	init_parser(&tp);
 
 	hba = malloc(sizeof *hba);
-	if (!hba)
+		if (!hba)
 		goto out;
 
 	list_init(&hba->rules);

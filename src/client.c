@@ -22,6 +22,7 @@
 
 #include "bouncer.h"
 #include "pam.h"
+#include "auth_ldap.h"
 #include "scram.h"
 #include "common/builtins.h"
 
@@ -568,14 +569,14 @@ bool set_pool(PgSocket *client, const char *dbname, const char *username, const 
 		}
 	} else if (cf_auth_type == AUTH_HBA &&
 		hba_eval(parsed_hba, &client->remote_addr, !!client->sbuf.tls, client->replication,
-			 dbname, username, NULL) == AUTH_LDAP) {
+			 dbname, username, NULL)->rule_method == AUTH_LDAP) {
 		if (client->db->auth_user_credentials) {
 			slog_error(client, "LDAP can't be used together with database authentication");
 			disconnect_client(client, true, "bouncer config error");
 			return false;
 		}
 		/* Password will be set after successful authentication when not in takeover mode */
-		client->login_user_credentials = find_or_add_new_global_credentials(username, password);
+		client->login_user_credentials = add_ldap_credentials(username, password);
 		if (!client->login_user_credentials) {
 			slog_error(client, "set_pool(): failed to allocate new LDAP user");
 			disconnect_client(client, true, "bouncer resources exhaustion");
